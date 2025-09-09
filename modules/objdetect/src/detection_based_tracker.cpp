@@ -45,9 +45,11 @@
 
 #include "opencv2/core/utility.hpp"
 
+#if !defined(__ZEPHYR__)
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#endif
 
 #if defined(DEBUG) || defined(_DEBUG)
 #undef DEBUGLOGS
@@ -128,26 +130,34 @@ class cv::DetectionBasedTracker::SeparateDetectionWork
         }
         void setParameters(const cv::DetectionBasedTracker::Parameters& params)
         {
+#if !defined(__ZEPHYR__)
             std::unique_lock<std::mutex> mtx_lock(mtx);
+#endif
             parameters = params;
         }
 
         inline void init()
         {
+#if !defined(__ZEPHYR__)
             std::unique_lock<std::mutex> mtx_lock(mtx);
+#endif
             stateThread = STATE_THREAD_STOPPED;
             isObjectDetectingReady = false;
             shouldObjectDetectingResultsBeForgot = false;
+#if !defined(__ZEPHYR__)
             objectDetectorThreadStartStop.notify_one();
+#endif
         }
     protected:
 
         DetectionBasedTracker& detectionBasedTracker;
         cv::Ptr<DetectionBasedTracker::IDetector> cascadeInThread;
+#if !defined(__ZEPHYR__)
         std::thread second_workthread;
         std::mutex mtx;
         std::condition_variable objectDetectorRun;
         std::condition_variable objectDetectorThreadStartStop;
+#endif
         std::vector<cv::Rect> resultDetect;
         volatile bool isObjectDetectingReady;
         volatile bool shouldObjectDetectingResultsBeForgot;
@@ -190,20 +200,26 @@ cv::DetectionBasedTracker::SeparateDetectionWork::~SeparateDetectionWork()
     if(stateThread!=STATE_THREAD_STOPPED) {
         LOGE("\n\n\nATTENTION!!! dangerous algorithm error: destructor DetectionBasedTracker::DetectionBasedTracker::~SeparateDetectionWork is called before stopping the workthread");
     }
+#if !defined(__ZEPHYR__)
     second_workthread.join();
+#endif
 }
 bool cv::DetectionBasedTracker::SeparateDetectionWork::run()
 {
     LOGD("DetectionBasedTracker::SeparateDetectionWork::run() --- start");
+#if !defined(__ZEPHYR__)
     std::unique_lock<std::mutex> mtx_lock(mtx);
+#endif
     // unlocked when leaving scope
     if (stateThread != STATE_THREAD_STOPPED) {
         LOGE("DetectionBasedTracker::SeparateDetectionWork::run is called while the previous run is not stopped");
         return false;
     }
     stateThread=STATE_THREAD_WORKING_SLEEPING;
+#if !defined(__ZEPHYR__)
     second_workthread = std::thread(workcycleObjectDetectorFunction, (void*)this); //TODO: add attributes?
     objectDetectorThreadStartStop.wait(mtx_lock);
+#endif
     LOGD("DetectionBasedTracker::SeparateDetectionWork::run --- end");
     return true;
 }
@@ -238,19 +254,26 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector()
     std::vector<Rect> objects;
 
     CV_Assert(stateThread==STATE_THREAD_WORKING_SLEEPING);
+#if !defined(__ZEPHYR__)
     std::unique_lock<std::mutex> mtx_lock(mtx);
+#endif
     {
+#if !defined(__ZEPHYR__)
         objectDetectorThreadStartStop.notify_one();
+#endif
         LOGD("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- before waiting");
         CV_Assert(stateThread==STATE_THREAD_WORKING_SLEEPING);
+#if !defined(__ZEPHYR__)
         objectDetectorRun.wait(mtx_lock);
+#endif
         if (isWorking()) {
             stateThread=STATE_THREAD_WORKING_WITH_IMAGE;
         }
         LOGD("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- after waiting");
     }
+#if !defined(__ZEPHYR__)
     mtx_lock.unlock();
-
+#endif
     bool isFirstStep=true;
 
     isObjectDetectingReady=false;
@@ -262,19 +285,26 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector()
         if (! isFirstStep) {
             LOGD("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- before waiting");
             CV_Assert(stateThread==STATE_THREAD_WORKING_SLEEPING);
+#if !defined(__ZEPHYR__)
             mtx_lock.lock();
+#endif
             if (!isWorking()) {//it is a rare case, but may cause a crash
                 LOGD("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- go out from the workcycle from inner part of lock just before waiting");
+#if !defined(__ZEPHYR__)
                 mtx_lock.unlock();
+#endif
                 break;
             }
             CV_Assert(stateThread==STATE_THREAD_WORKING_SLEEPING);
+#if !defined(__ZEPHYR__)
             objectDetectorRun.wait(mtx_lock);
+#endif
             if (isWorking()) {
                 stateThread=STATE_THREAD_WORKING_WITH_IMAGE;
             }
+#if !defined(__ZEPHYR__)
             mtx_lock.unlock();
-
+#endif
             LOGD("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- after waiting");
         } else {
             isFirstStep=false;
@@ -320,7 +350,9 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector()
         (void)(dt_detect_ms);
 
         LOGI("DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector() --- objects num==%d, t_ms=%.4f", (int)objects.size(), dt_detect_ms);
+#if !defined(__ZEPHYR__)
         mtx_lock.lock();
+#endif
         if (!shouldObjectDetectingResultsBeForgot) {
             resultDetect=objects;
             isObjectDetectingReady=true;
@@ -332,8 +364,9 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector()
         if(isWorking()) {
             stateThread=STATE_THREAD_WORKING_SLEEPING;
         }
+#if !defined(__ZEPHYR__)
         mtx_lock.unlock();
-
+#endif
         objects.clear();
     }// while(isWorking())
 
@@ -343,26 +376,35 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::workcycleObjectDetector()
 void cv::DetectionBasedTracker::SeparateDetectionWork::stop()
 {
     //FIXME: TODO: should add quickStop functionality
-  std::unique_lock<std::mutex> mtx_lock(mtx);
+#if !defined(__ZEPHYR__)
+    std::unique_lock<std::mutex> mtx_lock(mtx);
+#endif
     if (!isWorking()) {
+#if !defined(__ZEPHYR__)
         mtx_lock.unlock();
+#endif
         LOGE("SimpleHighguiDemoCore::stop is called but the SimpleHighguiDemoCore pthread is not active");
         stateThread = STATE_THREAD_STOPPING;
         return;
     }
     stateThread=STATE_THREAD_STOPPING;
     LOGD("DetectionBasedTracker::SeparateDetectionWork::stop: before going to sleep to wait for the signal from the workthread");
+#if !defined(__ZEPHYR__)
     objectDetectorRun.notify_one();
     objectDetectorThreadStartStop.wait(mtx_lock);
+#endif
     LOGD("DetectionBasedTracker::SeparateDetectionWork::stop: after receiving the signal from the workthread, stateThread=%d", (int)stateThread);
+#if !defined(__ZEPHYR__)
     mtx_lock.unlock();
+#endif
 }
 
 void cv::DetectionBasedTracker::SeparateDetectionWork::resetTracking()
 {
     LOGD("DetectionBasedTracker::SeparateDetectionWork::resetTracking");
+#if !defined(__ZEPHYR__)
     std::unique_lock<std::mutex> mtx_lock(mtx);
-
+#endif
     if (stateThread == STATE_THREAD_WORKING_WITH_IMAGE) {
         LOGD("DetectionBasedTracker::SeparateDetectionWork::resetTracking: since workthread is detecting objects at the moment, we should make cascadeInThread stop detecting and forget the detecting results");
         shouldObjectDetectingResultsBeForgot=true;
@@ -374,7 +416,9 @@ void cv::DetectionBasedTracker::SeparateDetectionWork::resetTracking()
     resultDetect.clear();
     isObjectDetectingReady=false;
 
+#if !defined(__ZEPHYR__)
     mtx_lock.unlock();
+#endif
 }
 
 bool cv::DetectionBasedTracker::SeparateDetectionWork::communicateWithDetectingThread(const Mat& imageGray, std::vector<Rect>& rectsWhereRegions)
@@ -390,8 +434,9 @@ bool cv::DetectionBasedTracker::SeparateDetectionWork::communicateWithDetectingT
 
     bool shouldHandleResult = false;
 
+#if !defined(__ZEPHYR__)
     std::unique_lock<std::mutex> mtx_lock(mtx);
-
+#endif
     if (isObjectDetectingReady) {
         shouldHandleResult=true;
         rectsWhereRegions = resultDetect;
@@ -418,11 +463,14 @@ bool cv::DetectionBasedTracker::SeparateDetectionWork::communicateWithDetectingT
 
 
         timeWhenDetectingThreadStartedWork = getTickCount() ;
-
+#if !defined(__ZEPHYR__)
         objectDetectorRun.notify_one();
+#endif
     }
 
+#if !defined(__ZEPHYR__)
     mtx_lock.unlock();
+#endif
     LOGD("DetectionBasedTracker::SeparateDetectionWork::communicateWithDetectingThread: result: shouldHandleResult=%d", (shouldHandleResult?1:0));
 
     return shouldHandleResult;

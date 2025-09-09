@@ -5,6 +5,11 @@
 #include "../precomp.hpp"
 #include "../usac.hpp"
 
+#if defined(__ZEPHYR__)
+#define M_PI 3.14159265358979323846
+#define M_SQRT2 1.41421356237309504880
+#endif
+
 namespace cv { namespace usac {
 class HomographyEstimatorImpl : public HomographyEstimator {
 private:

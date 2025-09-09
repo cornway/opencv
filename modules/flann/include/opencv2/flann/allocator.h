@@ -71,7 +71,7 @@ T* allocate(size_t count = 1)
  */
 
 const size_t     WORDSIZE=16;
-const  size_t     BLOCKSIZE=8192;
+const  size_t     ALLOC_BLOCKSIZE=8192;
 
 class PooledAllocator
 {
@@ -94,7 +94,7 @@ public:
     /**
         Default constructor. Initializes a new pool.
      */
-    PooledAllocator(int blockSize = BLOCKSIZE)
+    PooledAllocator(int blockSize = ALLOC_BLOCKSIZE)
     {
         blocksize = blockSize;
         remaining = 0;
@@ -141,8 +141,8 @@ public:
             wastedMemory += remaining;
 
             /* Allocate new storage. */
-            blockSize = (size + sizeof(void*) + (WORDSIZE-1) > BLOCKSIZE) ?
-                        size + sizeof(void*) + (WORDSIZE-1) : BLOCKSIZE;
+            blockSize = (size + sizeof(void*) + (WORDSIZE-1) > ALLOC_BLOCKSIZE) ?
+                        size + sizeof(void*) + (WORDSIZE-1) : ALLOC_BLOCKSIZE;
 
             // use the standard C malloc to allocate memory
             void* m = ::malloc(blockSize);

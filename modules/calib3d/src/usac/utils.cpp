@@ -7,6 +7,11 @@
 #include "opencv2/flann/miniflann.hpp"
 #include <map>
 
+#if defined(__ZEPHYR__)
+#define M_PI 3.14159265358979323846
+#define M_SQRT2 1.41421356237309504880
+#endif
+
 namespace cv { namespace usac {
 /*
 SolvePoly is used to find only real roots of N-degree polynomial using Sturm sequence.

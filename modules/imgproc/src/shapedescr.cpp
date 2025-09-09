@@ -43,6 +43,11 @@
 
 namespace cv
 {
+#if defined(__ZEPHYR__)
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+#endif
 
 const float EPS = 1.0e-4f;
 

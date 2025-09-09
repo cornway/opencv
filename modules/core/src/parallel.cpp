@@ -521,6 +521,7 @@ void parallel_for_(const cv::Range& range, const cv::ParallelLoopBody& body, dou
     bool isNotNestedRegion = !flagNestedParallelFor.load();
     if (isNotNestedRegion)
       isNotNestedRegion = !flagNestedParallelFor.exchange(true);
+#if !defined(__ZEPHYR__)
     if (isNotNestedRegion)
     {
         try
@@ -535,6 +536,7 @@ void parallel_for_(const cv::Range& range, const cv::ParallelLoopBody& body, dou
         }
     }
     else // nested parallel_for_() calls are not parallelized
+#endif  /* __ZEPHYR__ */
     {
         CV_UNUSED(nstripes);
         body(range);

@@ -1062,22 +1062,30 @@ public:
                             result = -(int)classifier->data.stages.size();
                         if( classifier->data.stages.size() + result == 0 )
                         {
+#if !defined(__ZEPHYR__)
                             mtx->lock();
+#endif
                             rectangles->push_back(Rect(cvRound(x*scalingFactor),
                                                        cvRound(y*scalingFactor),
                                                        winSize.width, winSize.height));
                             rejectLevels->push_back(-result);
                             levelWeights->push_back(gypWeight);
+#if !defined(__ZEPHYR__)
                             mtx->unlock();
+#endif
                         }
                     }
                     else if( result > 0 )
                     {
+#if !defined(__ZEPHYR__)
                         mtx->lock();
+#endif
                         rectangles->push_back(Rect(cvRound(x*scalingFactor),
                                                    cvRound(y*scalingFactor),
                                                    winSize.width, winSize.height));
+#if !defined(__ZEPHYR__)
                         mtx->unlock();
+#endif
                     }
                     if( result == 0 )
                         x += yStep;

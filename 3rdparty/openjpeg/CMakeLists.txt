@@ -142,6 +142,7 @@ CHECK_INCLUDE_FILE("sys/types.h"    HAVE_SYS_TYPES_H)
 CHECK_INCLUDE_FILE("unistd.h"       HAVE_UNISTD_H)
 
 # Allocating Aligned Memory Blocks
+
 include(CheckIncludeFiles)
 check_include_files(malloc.h OPJ_HAVE_MALLOC_H)
 include(CheckSymbolExists)
@@ -150,7 +151,7 @@ check_symbol_exists(_aligned_malloc malloc.h OPJ_HAVE__ALIGNED_MALLOC)
 # posix_memalign (needs _POSIX_C_SOURCE >= 200112L on Linux)
 set(_prev_CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS})
 set(CMAKE_REQUIRED_DEFINITIONS -D_POSIX_C_SOURCE=200112L)
-check_symbol_exists(posix_memalign stdlib.h OPJ_HAVE_POSIX_MEMALIGN)
+#check_symbol_exists(posix_memalign stdlib.h OPJ_HAVE_POSIX_MEMALIGN)
 set(CMAKE_REQUIRED_DEFINITIONS ${_prev_CMAKE_REQUIRED_DEFINITIONS})
 unset(_prev_CMAKE_REQUIRED_DEFINITIONS)
 # memalign (obsolete)
