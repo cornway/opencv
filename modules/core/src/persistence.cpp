@@ -545,6 +545,7 @@ bool FileStorage::Impl::open(const char *filename_or_buf, int _flags, const char
     flags = _flags;
 
     if (!mem_mode) {
+#if !defined(__ZEPHYR__)
         char *dot_pos = strrchr((char *) filename.c_str(), '.');
         char compression = '\0';
 
@@ -579,6 +580,9 @@ bool FileStorage::Impl::open(const char *filename_or_buf, int _flags, const char
             CV_Error(cv::Error::StsNotImplemented, "There is no compressed file storage support in this configuration");
 #endif
         }
+#else /* !defined(__ZEPHYR__) */
+        CV_Error(cv::Error::StsNotImplemented, "Not supported in zephyr yet");
+#endif /* !defined(__ZEPHYR__) */
     }
 
     // FIXIT release() must do that, use CV_Assert() here instead
@@ -589,6 +593,7 @@ bool FileStorage::Impl::open(const char *filename_or_buf, int _flags, const char
     fmt = FileStorage::FORMAT_AUTO;
 
     if (write_mode) {
+#if !defined(__ZEPHYR__)
         fmt = flags & FileStorage::FORMAT_MASK;
 
         if (mem_mode)
@@ -727,6 +732,9 @@ bool FileStorage::Impl::open(const char *filename_or_buf, int _flags, const char
             emitter_do_not_use_direct_dereference = createJSONEmitter(this);
         }
         is_opened = true;
+#else /* !defined(__ZEPHYR__) */
+        CV_Error(cv::Error::StsNotImplemented, "Not supported in zephyr yet");
+#endif /* !defined(__ZEPHYR__) */
     } else {
         const size_t buf_size0 = 40;
         buffer.resize(buf_size0);
