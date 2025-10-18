@@ -11,7 +11,12 @@
 #include <string>
 #include <iterator>
 
+#if defined(__ZEPHYR__)
+#define USE_ZLIB 0
+#else
 #define USE_ZLIB 1
+#endif
+
 #if USE_ZLIB
 #  ifndef _LFS64_LARGEFILE
 #    define _LFS64_LARGEFILE 0
